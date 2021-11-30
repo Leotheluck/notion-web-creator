@@ -1,0 +1,36 @@
+version: "3"
+services:
+    notion-web-creator-php:
+        image: "pauulog/php-docker-dev:latest"
+        container_name: "notion-web-creator-php"
+        links:
+          - "notion-web-creator-mariadb:mariadb.host"
+        volumes:
+            - "./:/notion-web-creator:rw"
+        working_dir: /notion-web-creator
+        restart: always
+    notion-web-creator-nginx:
+        image: "nginx:1-alpine"
+        container_name: "notion-web-creator-nginx"
+        links:
+          - "notion-web-creator-php:notion-web-creator-php.host"
+        ports:
+          - 8080:80
+        volumes:
+            - "./:/notion-web-creator:rw"
+            - "./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:r"
+        working_dir: /notion-web-creator
+        restart: always
+    notion-web-creator-mariadb:
+        image: "mariadb:10.6"
+        container_name: "notion-web-creator-mariadb"
+        volumes:
+            - "._mysql_data_dir/:/var/lib/mysql:rw"
+        ports:
+          - 3307:3306
+        environment:
+          - MARIADB_USER
+          - MARIADB_PASSWORD
+          - MARIADB_DATABASE
+          - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true
+        restart: always
