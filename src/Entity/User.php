@@ -60,7 +60,7 @@ class User
     /**
      * @ORM\Column(type="string", length=255)
      */
-    private $notionÂ_mail;
+    private $notion_email;
 
     public function getId(): ?int
     {
@@ -103,6 +103,11 @@ class User
         return $this;
     }
 
+    public function getWorkspaceId(): ?string
+    {
+        return $this->workspace_id;
+    }
+
     public function getWorkspaceIcon(): ?string
     {
         return $this->workspace_icon;
@@ -114,12 +119,7 @@ class User
 
         return $this;
     }
-
-    public function getWorkspaceId(): ?string
-    {
-        return $this->workspace_id;
-    }
-
+    
     public function setWorkspaceId(string $workspace_id): self
     {
         $this->workspace_id = $workspace_id;
@@ -163,15 +163,16 @@ class User
         return $this;
     }
 
-    public function getNotionÂMail(): ?string
+    public function getNotionEmail(): ?string
     {
-        return $this->notionÂ_mail;
+        return $this->notion_email;
     }
 
-    public function setNotionÂMail(string $notionÂ_mail): self
+    public function setNotionEmail(string $notion_email): self
     {
-        $this->notionÂ_mail = $notionÂ_mail;
+        $this->notion_email = $notion_email;
 
         return $this;
     }
+
 }
