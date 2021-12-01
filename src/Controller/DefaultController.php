@@ -7,6 +7,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
+
 
 class DefaultController extends AbstractController
 {
@@ -15,7 +19,10 @@ class DefaultController extends AbstractController
      */
     private $httpClient;
 
-    public function __construct(HttpClientInterface $httpClient)
+    public function __construct(
+        HttpClientInterface $httpClient
+        )
+
     {
         $this->httpClient = $httpClient;
     }
@@ -44,12 +51,16 @@ class DefaultController extends AbstractController
     /**
      * @Route("/oauth_token", name="oauth_token")
      */
-    public function oauth_token(Request $request): Response
+    public function oauth_token(Request $request, ManagerRegistry $doctrine): Response
     {
+        $entityManager = $doctrine->getManager();
+        $notionClientId = $this->getParameter('notion_client_id');
+        $notionClientSecret = $this->getParameter('notion_client_secret');
+
         $authorization_code = $request->get('code');
         $basicAuthentication = base64_encode(sprintf('%s:%s',
-            $this->getParameter('notion_client_id'),
-            $this->getParameter('notion_client_secret')
+            $notionClientId,
+            $notionClientSecret
             ));
 
         try {
@@ -78,6 +89,18 @@ class DefaultController extends AbstractController
 
         // Create or update user
 
+        $user = new User();
+        $user->setToken($json_response['access_token']);
+        $user->setWorkspaceName($json_response['workspace_name']);
+        $user->setWorkspaceIcon($json_response['workspace_icon']);
+        $user->setWorkspaceId($json_response['workspace_id']);
+        $user->setNotionId($json_response['owner']['user']['id']);
+        $user->setNotionName($json_response['owner']['user']['name']);
+        $user->setNotionIcon($json_response['owner']['user']['avatar_url']);
+        $user->setNotionEmail($json_response['owner']['user']['person']['email']);
+        $entityManager->persist($user);
+        $entityManager->flush();
+        var_dump($user);
         return $this->json($json_response);
     }
 }
