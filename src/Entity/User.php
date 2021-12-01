@@ -18,11 +18,6 @@ class User
     private $id;
 
     /**
-     * @ORM\Column(type="integer")
-     */
-    private $uid;
-
-    /**
      * @ORM\Column(type="string", length=255)
      */
     private $token;
@@ -65,18 +60,6 @@ class User
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getUid(): ?int
-    {
-        return $this->uid;
-    }
-
-    public function setUid(int $uid): self
-    {
-        $this->uid = $uid;
-
-        return $this;
     }
 
     public function getToken(): ?string
