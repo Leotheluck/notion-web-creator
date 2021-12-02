@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -101,6 +102,39 @@ class DefaultController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
         var_dump($user);
-        return $this->json($json_response);
+
+        return $this->redirect("http://localhost:3000");
     }
+
+    /**
+     * @Route("/get_info", name="get_info")
+     */
+    public function get_info(): Response
+    {
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
+
+        $token = $data->getToken();
+
+        $authorizationHeader = sprintf('Bearer %s', $token);
+
+        $pages = $this->httpClient->request('POST', 'https://api.notion.com/v1/search/', [
+            'body' => [
+                'query' => '',
+            ],
+            'headers' => [
+                'Authorization' => $authorizationHeader,
+                'Notion-Version' => '2021-08-16'
+            ]
+        ]);
+
+        $filesystem = new Filesystem();
+        // Create file
+        $staticWebsitesRootDir = sprintf('%s/%s', $this->getParameter('kernel.project_dir'), $this->getParameter('static_websites_root'));
+        $fileName = sprintf('%s/%s', $staticWebsitesRootDir, 'test.html');
+
+        $filesystem->dumpFile($fileName, 'coucou');
+
+        return $this->json($pages->getContent());
+    }
+
 }
