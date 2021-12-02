@@ -132,9 +132,6 @@ class DefaultController extends AbstractController
         return true;
      }
 
-    /**
-     * @Route("/get_info", name="get_info")
-     */
     public function get_info(): Response
     {
         $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
@@ -143,7 +140,7 @@ class DefaultController extends AbstractController
 
         $authorizationHeader = sprintf('Bearer %s', $token);
 
-        $pages = $this->httpClient->request('POST', 'https://api.notion.com/v1/search/', [
+        $workspace = $this->httpClient->request('POST', 'https://api.notion.com/v1/search/', [
             'body' => [
                 'query' => '',
             ],
@@ -153,14 +150,16 @@ class DefaultController extends AbstractController
             ]
         ]);
 
-        $filesystem = new Filesystem();
+        //$filesystem = new Filesystem();
         // Create file
-        $staticWebsitesRootDir = sprintf('%s/%s', $this->getParameter('kernel.project_dir'), $this->getParameter('static_websites_root'));
-        $fileName = sprintf('%s/%s', $staticWebsitesRootDir, 'test.html');
+        //$staticWebsitesRootDir = sprintf('%s/%s', $this->getParameter('kernel.project_dir'), $this->getParameter('static_websites_root'));
+        //$fileName = sprintf('%s/%s', $staticWebsitesRootDir, 'test.html');
 
-        $filesystem->dumpFile($fileName, 'coucou');
+        //$filesystem->dumpFile($fileName, 'coucou');
 
-        return $this->json($pages->getContent());
+        $workspace_decoded = json_decode($workspace->getContent(), true);
+
+        return $this->json($workspace_decoded['results'][0]['id']);
     }
 
 }

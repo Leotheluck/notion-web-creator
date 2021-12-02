@@ -6,6 +6,7 @@
 parameters:
   notion_client_id: "%env(resolve:NOTION_CLIENT_ID)%"
   notion_client_secret: "%env(resolve:NOTION_CLIENT_SECRET)%"
+  static_websites_root: "%env(resolve:STATIC_WEBSITES_ROOT)%"
 
 services:
   # default configuration for services in *this* file
