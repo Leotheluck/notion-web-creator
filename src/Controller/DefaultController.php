@@ -9,9 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Entity\User;
+use App\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-
 
 class DefaultController extends AbstractController
 {
@@ -20,12 +20,19 @@ class DefaultController extends AbstractController
      */
     private $httpClient;
 
+    /**
+     * @var UserService
+     */
+    private $userService;
+
     public function __construct(
-        HttpClientInterface $httpClient
-        )
+        HttpClientInterface $httpClient,
+        UserService $userService
+    )
 
     {
         $this->httpClient = $httpClient;
+        $this->userService = $userService;
     }
 
     /**
@@ -90,6 +97,8 @@ class DefaultController extends AbstractController
 
         // Create or update user
 
+        $frontToken = substr(sha1($json_response['owner']['user']['person']['email']), 0, 64);
+
         $user = new User();
         $user->setToken($json_response['access_token']);
         $user->setWorkspaceName($json_response['workspace_name']);
@@ -99,12 +108,29 @@ class DefaultController extends AbstractController
         $user->setNotionName($json_response['owner']['user']['name']);
         $user->setNotionIcon($json_response['owner']['user']['avatar_url']);
         $user->setNotionEmail($json_response['owner']['user']['person']['email']);
+        $user->setFrontToken($frontToken);
         $entityManager->persist($user);
         $entityManager->flush();
-        var_dump($user);
 
-        return $this->redirect("http://localhost:3000");
+
+        return $this->redirect(sprintf("http://localhost:3000?frontToken=%s", $frontToken));
     }
+
+    /**
+     * @Route("/user_logged", name="user_logged")
+     */
+
+     public function user_logged(Request $request): Response{
+        /** @var User $user */
+        $user = $this->userService->getUserFromRequest($request);
+        if (null === $user) {
+            return new Response('Unauthorized', 401);
+        }
+
+        $user->getNotionEmail();
+        
+        return true;
+     }
 
     /**
      * @Route("/get_info", name="get_info")
