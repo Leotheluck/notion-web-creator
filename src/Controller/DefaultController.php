@@ -10,6 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Entity\User;
 use App\Service\UserService;
+use App\Service\NotionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -25,14 +26,22 @@ class DefaultController extends AbstractController
      */
     private $userService;
 
+    /**
+     * @var NotionService
+     */
+
+    private $notionService;
+
     public function __construct(
         HttpClientInterface $httpClient,
-        UserService $userService
+        UserService $userService,
+        NotionService $notionService
     )
 
     {
         $this->httpClient = $httpClient;
         $this->userService = $userService;
+        $this->notionService = $notionService;
     }
 
     /**
@@ -132,23 +141,57 @@ class DefaultController extends AbstractController
         return true;
      }
 
+
+    /**
+     * @Route("/get_info", name="get_info")
+     */
+
     public function get_info(): Response
     {
         $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
 
         $token = $data->getToken();
 
-        $authorizationHeader = sprintf('Bearer %s', $token);
+        $workspace_content = $this->notionService->getWorkSpaceContent($token);
 
-        $workspace = $this->httpClient->request('POST', 'https://api.notion.com/v1/search/', [
-            'body' => [
-                'query' => '',
-            ],
-            'headers' => [
-                'Authorization' => $authorizationHeader,
-                'Notion-Version' => '2021-08-16'
-            ]
-        ]);
+        // return $this->json($workspace_content);
+
+        // return $this->json($workspace_content['results'][0]['id']);
+
+        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+
+        // return $this->json($page_content);
+
+        $componentArray = [];
+
+        foreach ($page_content['results'] as $element) {
+            $type = $element['type'];
+
+            if ($type == 'heading_1' || $type == 'heading_2' || $type == 'heading_3') {
+                array_push($componentArray, $element[$type]['text'][0]['text']['content']);
+            } else if ($type == 'image') {
+                array_push($componentArray, $element[$type]['file']['url']);
+            }
+
+            
+            array_push($componentArray, sprintf('(Type : %s)' ,$type));
+        }
+
+        return $this->json($componentArray);
+
+        return $this->json($this->notionService->fetchContent($token, $page_content['id']));
+
+        // $authorizationHeader = sprintf('Bearer %s', $token);
+
+        // $workspace = $this->httpClient->request('POST', 'https://api.notion.com/v1/search/', [
+        //     'body' => [
+        //         'query' => '',
+        //     ],
+        //     'headers' => [
+        //         'Authorization' => $authorizationHeader,
+        //         'Notion-Version' => '2021-08-16'
+        //     ]
+        // ]);
 
         //$filesystem = new Filesystem();
         // Create file
@@ -157,9 +200,9 @@ class DefaultController extends AbstractController
 
         //$filesystem->dumpFile($fileName, 'coucou');
 
-        $workspace_decoded = json_decode($workspace->getContent(), true);
+        // $workspace_decoded = json_decode($workspace->getContent(), true);
 
-        return $this->json($workspace_decoded['results'][0]['id']);
+        // return $this->json($workspace_decoded['results'][0]['id']);
     }
 
 }
