@@ -54,8 +54,6 @@ class NotionService
             ]);
             
         return json_decode($workspace->getContent(), true);
-
-        return $this->json($workspace_decoded['results'][0]['id']);
     }
 
     public function fetchContent($token, $page_id)
