@@ -223,12 +223,6 @@ class DefaultController extends AbstractController
         // Get the token associated with the workspace selected
         $token = $data->getToken();
 
-        // Fetch content from the workspace
-        $workspace_content = $this->notionService->getWorkSpaceContent($token);
-
-        // Fetch content from the first page of the workspace
-        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
-
         //
         // File
         //
@@ -246,13 +240,24 @@ class DefaultController extends AbstractController
         $filepath = sprintf('%s/%s', $staticWebsitesRootDir, sprintf('%s.html', $filename));
 
         // Build file content
-        $file_content = $this->pageService->buildPage($this->json($page_content['results'][0]['type']));
+        $file_content = $this->pageService->buildPage($token);
 
         // Create final file
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
+    }
+
+    /**
+     * @Route ("/site", name="site")
+     */
+    public function site (): Response
+    {
+        // Redirect root
+        $staticWebsitesRootDir = sprintf('%s/%s', $this->getParameter('kernel.project_dir'), $this->getParameter('static_websites_root'));
+
+        $this->render(sprintf('%s/%s.html', $staticWebsitesRootDir, $_GET['page']));
     }
 
 }
