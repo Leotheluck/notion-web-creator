@@ -324,7 +324,7 @@ h2.style-1{
 }
 
 h2.style-2{
-    background: blue;
+    color: blue;
 }
 
 h3{
@@ -335,11 +335,11 @@ h3{
 }
 
 h3.style-1{
-    background: blue;
+    color: blue;
 }
 
 h3.style-2{
-    background: blue;
+    color: blue;
 }
 
 p{
@@ -350,11 +350,11 @@ p{
 }
 
 p.style-1{
-    background: blue;
+    font-family: serif;
 }
 
 p.style-2{
-    background: blue;
+    font-size: 1.25vw;
 }
 
 img{
@@ -364,11 +364,11 @@ img{
 }
 
 img.style-1{
-    background: blue;
+    width: 40vw;
 }
 
 img.style-2{
-    background: blue;
+    width: 20vw;
 }
 
 </style>');
