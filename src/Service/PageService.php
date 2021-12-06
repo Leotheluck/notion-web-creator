@@ -51,15 +51,6 @@ class PageService
 
     public function buildPage($token, $stylesheet): array
     {
-        // Fetch content from the workspace
-        $workspace_content = $this->notionService->getWorkSpaceContent($token);
-
-        // Fetch content from the first page of the workspace
-        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
-
-        // Store file content
-        $file_content = [];
-
         // Get stylesheet
         $styles = explode(",", $stylesheet);
 
@@ -67,6 +58,14 @@ class PageService
         for ($i = 0; $i < count($styles); $i++) {
             $styles[$i] = explode('::', $styles[$i]);
         }
+
+        // Fetch content from the workspace
+        $workspace_content = $this->notionService->getWorkSpaceContent($token);
+
+        // Fetch content from the first page of the workspace
+        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+
+        $file_content = [];
 
         array_push(
             $file_content,
@@ -80,10 +79,17 @@ class PageService
     <title>%s</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%shttp://www.w3.org/2000/svg%s viewBox=%s0 0 100 100%s><text y=%s.9em%s font-size=%s90%s>%s</text></svg>">
 </head>
-<body>',
+<body>
+    <div class="header">
+        <a class="title" href="#">%s %s</a>
+        <a class="credit" href="https://www.selfer.fr">Made with Selfer</a>
+    </div>
+    <div class="container">',
                 $workspace_content['results'][0]['properties']['title']['title'][0]['text']['content'],
                 "'","'","'","'","'","'","'","'",
-                $workspace_content['results'][0]['icon']['emoji']
+                $workspace_content['results'][0]['icon']['emoji'],
+                $workspace_content['results'][0]['icon']['emoji'],
+                $workspace_content['results'][0]['properties']['title']['title'][0]['text']['content']
             )
         );
 
@@ -167,17 +173,122 @@ class PageService
         array_push(
             $file_content,
             '
+    </div>
 </body>
 </html>
 
 <style>
+*{
+    margin: 0;
+}
+
+html{
+    scroll-behavior: smooth;
+}
+
+.header{
+    position: fixed;
+    width: 100vw;
+    height: 10vh;
+    background: #FF8787;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header .title{
+    margin-left: 20vw;
+    font-size: 2vw;
+    text-decoration: none;
+    color: #fff;
+    font-family: sans-serif;
+    transition: 0.3s;
+    font-weight: 600;
+}
+
+.header .title:hover{
+    transform: scale(0.975);
+}
+
+.header .credit{
+    margin-right: 20vw;
+    padding-top: .5vh;
+    font-size: 1vw;
+    text-decoration: none;
+    color: #f6f6f6;
+    font-family: sans-serif;
+    font-weight: 400;
+}
+
+.header .credit:hover{
+    text-decoration: underline;
+}
+
+
+.container{
+    width: 60vw;
+    padding-top: 10vh;
+    margin-left: 20vw;
+    margin-right: 20vw;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20vh;
+}
+
 h1{
-    background: red;
+    font-size: 5vw;
+    font-family: sans-serif;
+    font-weight: 700;
+    margin: 3vh 0 .5vh 0;
 }
 
 h1.style-1{
     background: blue;
 }
+
+h2{
+    font-size: 3.5vw;
+    font-family: sans-serif;
+    font-weight: 600;
+    margin: 2vh 0 .5vh 0;
+}
+
+h2.style-1{
+    background: blue;
+}
+
+h3{
+    font-size: 2.5vw;
+    font-family: sans-serif;
+    font-weight: 500;
+    margin: 1.25vh 0 .5vh 0;
+}
+
+h3.style-1{
+    background: blue;
+}
+
+p{
+    font-size: 1.2vw;
+    font-family: sans-serif;
+    font-weight: 400;
+    margin: 1vh 0 .5vh 0;
+}
+
+p.style-1{
+    background: blue;
+}
+
+img{
+    margin: 2.5vh 0 2.5vh 0;
+    border-radius: 30px;
+    width: 60vw;
+}
+
+img.style-1{
+    background: blue;
+}
+
 </style>');
 
         return $file_content;

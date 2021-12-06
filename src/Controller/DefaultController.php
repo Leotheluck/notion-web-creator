@@ -253,14 +253,16 @@ class DefaultController extends AbstractController
         // Get the token associated with the workspace selected
         $token = $data->getToken();
 
-        // Identify matching page in DB
-        $stylesheet = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['page_id' => $_GET['page_id']]);
+        // Fetch style data
+        $superstyle = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['page_id' => $_GET['page_id']]);
 
         // File name
-        $filename = $stylesheet->getPageName();
+        $filename = $superstyle->getPageName();
 
         // Get Stylesheet
-        $stylesheet = $stylesheet->getStylesheet();
+        $stylesheet = $superstyle->getStylesheet();
+
+        $ss = strval($stylesheet);
 
         //
         // File
@@ -276,13 +278,12 @@ class DefaultController extends AbstractController
         $filepath = sprintf('%s/%s', $staticWebsitesRootDir, sprintf('%s.html', $filename));
 
         // Build file content
-        $file_content = $this->pageService->buildPage($token, $stylesheet);
+        $file_content = $this->pageService->buildPage($token, $ss);
 
         // Create final file
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
-        return $this->json('hi');
         return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
