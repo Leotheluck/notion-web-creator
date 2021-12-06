@@ -122,9 +122,18 @@ class PageService
                             $result['heading_1']['text'][0]['text']['content']
                         )
                     );
+                } else if (!empty($result['heading_1']['text'][0]['text']['content']) && $styling == 2) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <h1 class="style-2">%s</h1>',
+                            $result['heading_1']['text'][0]['text']['content']
+                        )
+                    );
                 }
             } else if ($type == 'heading_2') {
-                if (!empty($result['heading_2']['text'][0]['text']['content'])) {
+                if (!empty($result['heading_2']['text'][0]['text']['content']) && $styling == 0) {
                     array_push(
                         $file_content,
                         sprintf(
@@ -133,9 +142,27 @@ class PageService
                             $result['heading_2']['text'][0]['text']['content']
                         )
                     );
+                } else if (!empty($result['heading_2']['text'][0]['text']['content']) && $styling == 1) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <h2 class="style-1">%s</h2>',
+                            $result['heading_2']['text'][0]['text']['content']
+                        )
+                    );
+                } else if (!empty($result['heading_2']['text'][0]['text']['content']) && $styling == 2) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <h2 class="style-2">%s</h2>',
+                            $result['heading_2']['text'][0]['text']['content']
+                        )
+                    );
                 }
             } else if ($type == 'heading_3') {
-                if (!empty($result['heading_3']['text'][0]['text']['content'])) {
+                if (!empty($result['heading_3']['text'][0]['text']['content']) && $styling == 0) {
                     array_push(
                         $file_content,
                         sprintf(
@@ -144,14 +171,50 @@ class PageService
                             $result['heading_3']['text'][0]['text']['content']
                         )
                     );
+                } else if (!empty($result['heading_3']['text'][0]['text']['content']) && $styling == 1) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <h3 class="style-1">%s</h3>',
+                            $result['heading_3']['text'][0]['text']['content']
+                        )
+                    );
+                } else if (!empty($result['heading_3']['text'][0]['text']['content']) && $styling == 2) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <h3 class="style-2">%s</h3>',
+                            $result['heading_3']['text'][0]['text']['content']
+                        )
+                    );
                 }
             } else if ($type == 'paragraph') {
-                if (!empty($result['paragraph']['text'][0]['text']['content'])) {
+                if (!empty($result['paragraph']['text'][0]['text']['content']) && $styling == 0) {
                     array_push(
                         $file_content,
                         sprintf(
                             '
     <p>%s</p>',
+                            $result['paragraph']['text'][0]['text']['content']
+                        )
+                    );
+                } else if (!empty($result['paragraph']['text'][0]['text']['content']) && $styling == 1) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <p class="style-1">%s</p>',
+                            $result['paragraph']['text'][0]['text']['content']
+                        )
+                    );
+                } else if (!empty($result['paragraph']['text'][0]['text']['content']) && $styling == 2) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <p class="style-2">%s</p>',
                             $result['paragraph']['text'][0]['text']['content']
                         )
                     );
@@ -224,10 +287,9 @@ html{
     text-decoration: underline;
 }
 
-
 .container{
     width: 60vw;
-    padding-top: 10vh;
+    padding-top: 20vh;
     margin-left: 20vw;
     margin-right: 20vw;
     display: flex;
@@ -246,6 +308,10 @@ h1.style-1{
     background: blue;
 }
 
+h1.style-2{
+    background: blue;
+}
+
 h2{
     font-size: 3.5vw;
     font-family: sans-serif;
@@ -254,6 +320,10 @@ h2{
 }
 
 h2.style-1{
+    background: blue;
+}
+
+h2.style-2{
     background: blue;
 }
 
@@ -268,6 +338,10 @@ h3.style-1{
     background: blue;
 }
 
+h3.style-2{
+    background: blue;
+}
+
 p{
     font-size: 1.2vw;
     font-family: sans-serif;
@@ -279,6 +353,10 @@ p.style-1{
     background: blue;
 }
 
+p.style-2{
+    background: blue;
+}
+
 img{
     margin: 2.5vh 0 2.5vh 0;
     border-radius: 30px;
@@ -286,6 +364,10 @@ img{
 }
 
 img.style-1{
+    background: blue;
+}
+
+img.style-2{
     background: blue;
 }
 

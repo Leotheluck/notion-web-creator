@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Entity\User;
+use App\Entity\Page;
 use App\Service\UserService;
 use App\Service\NotionService;
 use App\Service\PageService;
@@ -249,18 +250,18 @@ class DefaultController extends AbstractController
         // Get the token associated with the workspace selected
         $token = $data->getToken();
 
-        // Fetch content from the workspace
-        $workspace_content = $this->notionService->getWorkSpaceContent($token);
+        // Fetch style data
+        $superstyle = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['page_id' => $_GET['page_id']]);
 
-        // Fetch content from the first page of the workspace
-        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+        // File name
+        $filename = $superstyle->getPageName();
+
+        // Get Stylesheet
+        $stylesheet = $superstyle->getStylesheet();
 
         //
         // File
         //
-
-        // File name
-        $filename = $_GET['filename'];
 
         // Initiate File
         $filesystem = new Filesystem();
@@ -272,12 +273,13 @@ class DefaultController extends AbstractController
         $filepath = sprintf('%s/%s', $staticWebsitesRootDir, sprintf('%s.html', $filename));
 
         // Build file content
-        $file_content = $this->pageService->buildPage($this->json($page_content['results'][0]['type']));
+        $file_content = $this->pageService->buildPage($token, $stylesheet);
 
         // Create final file
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
+        return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
 
@@ -338,4 +340,11 @@ class DefaultController extends AbstractController
 
     }
 
+    /**
+     * @Route ("/s", name="s")
+     */
+    public function s (): Response
+    {
+        return $this->render(sprintf('%s.html', $_GET['p']));
+    }
 }
