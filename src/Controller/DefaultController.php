@@ -141,7 +141,7 @@ class DefaultController extends AbstractController
 
 
         // Redirect in front page once the user is logged and variable are sent in DB
-        return $this->redirect(sprintf("https://%s?frontToken=%s", $selferFrontUrl, $frontToken));
+        return $this->redirect(sprintf("%s?frontToken=%s", $selferFrontUrl, $frontToken));
     }
 
     /**
