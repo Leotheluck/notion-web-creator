@@ -289,7 +289,7 @@ class DefaultController extends AbstractController
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
-        return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
+        return $this->redirect(sprintf("https://api.selfer.fr/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
 
@@ -329,7 +329,7 @@ class DefaultController extends AbstractController
                     $returnArrayPage []= [
                         'obj' => $type,
                         'id' => $element['id'],
-                        'content' => $element[$type]['text'][0]['text']['content'],
+                        'content' => $element[$type]['file']['url'],
                         'childrens' => []
                     ];
                 }
