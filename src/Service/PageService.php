@@ -62,7 +62,7 @@ class PageService
         // Fetch content from the workspace
         $workspace_content = $this->notionService->getWorkSpaceContent($token);
 
-        // Fetch content from the first page of the workspace
+        // Fetch content from the only page of the workspace
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
 
         $file_content = [];

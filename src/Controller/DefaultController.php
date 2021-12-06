@@ -69,7 +69,7 @@ class DefaultController extends AbstractController
     {
         // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=https://api.selfer.fr/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -104,7 +104,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
+                'redirect_uri' => 'http://localhost:8080/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -244,30 +244,40 @@ class DefaultController extends AbstractController
         // Data
         //
 
-        $entityManager = $doctrine->getManager();
-
-        $page = new Page();
-        $page->setPageId($_GET['page_id']);
-        $page->setPageName($_GET['page_name']);
-        $page->setWorkspaceId($_GET['code']);
-        $page->setStylesheet($_GET['style']);
-        $entityManager->persist($page);
-        $entityManager->flush();
-
         // Identify matching workspace in DB
-        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['id']]);
 
         // Get the token associated with the workspace selected
         $token = $data->getToken();
 
-        // Fetch style data
-        $superstyle = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['page_id' => $_GET['page_id']]);
+        $workspace_content = $this->notionService->getWorkSpaceContent($token);
+
+        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+
+        $componentArray = [];
+
+        foreach ($page_content['results'] as $element) {
+            $type = $element['type'];
+
+            if ($type == 'heading_1' || $type == 'heading_2' || $type == 'heading_3' || $type == 'paragraph' || $type == 'image') {
+                array_push($componentArray, $element['id'] . "::0");
+            }
+        }
+
+        $stylesheet = implode(",", $componentArray);
+
+        $entityManager = $doctrine->getManager();
 
         // File name
-        $filename = $superstyle->getPageName();
+        $filename = $_GET['page_name'];
 
-        // Get Stylesheet
-        $stylesheet = $superstyle->getStylesheet();
+        $page = new Page();
+        $page->setPageId($workspace_content['results'][0]['id']);
+        $page->setPageName($filename);
+        $page->setWorkspaceId($_GET['id']);
+        $page->setStylesheet($stylesheet);
+        $entityManager->persist($page);
+        $entityManager->flush();
 
         //
         // File
@@ -289,7 +299,7 @@ class DefaultController extends AbstractController
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
-        return $this->redirect(sprintf("https://api.selfer.fr/s?p=%s", $filename));
+        return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
 
