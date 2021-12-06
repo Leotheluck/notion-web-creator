@@ -66,8 +66,9 @@ class DefaultController extends AbstractController
      */
     public function oauth(): Response
     {
+        // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=https://api.selfer.fr/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -80,7 +81,10 @@ class DefaultController extends AbstractController
     public function oauth_token(Request $request, ManagerRegistry $doctrine): Response
     {
         $entityManager = $doctrine->getManager();
+        // Fetch client ID from services
         $notionClientId = $this->getParameter('notion_client_id');
+
+        // Fetch client secret from services
         $notionClientSecret = $this->getParameter('notion_client_secret');
 
         $authorization_code = $request->get('code');
@@ -99,7 +103,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'http://localhost:8080/oauth_token'
+                'redirect_uri' => 'http://selfer.fr/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -113,10 +117,11 @@ class DefaultController extends AbstractController
             return $this->json($e->getMessage());
         }
 
-        // Create or update user
-
+        // Create front token used to login in front
+    
         $frontToken = substr(sha1($json_response['owner']['user']['person']['email']), 0, 64);
 
+        // Create new user to assign variables
         $user = new User();
         $user->setToken($json_response['access_token']);
         $user->setWorkspaceName($json_response['workspace_name']);
@@ -131,7 +136,9 @@ class DefaultController extends AbstractController
         $entityManager->flush();
 
 
-        return $this->redirect(sprintf("http://localhost:3000?frontToken=%s", $frontToken));
+
+        // Redirect in front page once the user is logged and variable are sent in DB
+        return $this->redirect(sprintf("http://selfer.fr?frontToken=%s", $frontToken));
     }
 
     /**
@@ -163,13 +170,13 @@ class DefaultController extends AbstractController
 
         $workspace_content = $this->notionService->getWorkSpaceContent($token);
 
-        return $this->json($workspace_content);
+//        return $this->json($workspace_content);
 
         // return $this->json($workspace_content['results'][0]['id']);
 
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
 
-        return $this->json($page_content);
+        // return $this->json($page_content);
 
         $componentArray = [];
 
@@ -178,10 +185,29 @@ class DefaultController extends AbstractController
 
             if ($type == 'heading_1' || $type == 'heading_2' || $type == 'heading_3') {
                 array_push($componentArray, $element[$type]['text'][0]['text']['content']);
-            } else if ($type == 'image') {
+            } 
+            else if ($type == 'image') {
                 array_push($componentArray, $element[$type]['file']['url']);
             }
 
+
+            // else if($type == 'paragraph'){
+            //     foreach ($element['paragraph']['text'] as $texts) {
+            //         if (!empty($texts)) {
+            //             foreach ($texts['text'] as $text) {
+            //                 var_dump($text);
+            //             }
+            //             //die;
+            //             //array_push($componentArray, $text['text']['content']);
+            //         }
+            //     }
+            else if($type== 'paragraph'){
+                if(!empty($element[$type]['text'][0]['text']['content'])){
+                    array_push($componentArray, $element[$type]['text'][0]['text']['content']);
+                }
+                // var_dump($element[$type]['text']);
+        
+            }
             
             array_push($componentArray, sprintf('(Type : %s)' ,$type));
         }
@@ -204,7 +230,7 @@ class DefaultController extends AbstractController
 
         // $workspace_decoded = json_decode($workspace->getContent(), true);
 
-        // return $this->json($workspace_decoded['results'][0]['id']);
+        return $this->json($workspace_decoded['results'][0]['id']);
     }
 
     /**
