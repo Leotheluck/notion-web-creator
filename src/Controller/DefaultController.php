@@ -68,7 +68,7 @@ class DefaultController extends AbstractController
     {
         // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=https://api.selfer.fr/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://api.selfer.fr/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -103,7 +103,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
+                'redirect_uri' => 'http://api.selfer.fr/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -138,7 +138,7 @@ class DefaultController extends AbstractController
 
 
         // Redirect in front page once the user is logged and variable are sent in DB
-        return $this->redirect(sprintf("https://selfer.fr?frontToken=%s", $frontToken));
+        return $this->redirect(sprintf("http://selfer.fr?frontToken=%s", $frontToken));
     }
 
     /**
@@ -176,7 +176,7 @@ class DefaultController extends AbstractController
 
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
 
-        // return $this->json($page_content);
+        return $this->json($page_content);
 
         $componentArray = [];
 
@@ -279,6 +279,63 @@ class DefaultController extends AbstractController
 
         // Send success message
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
+    }
+
+    /**
+     * @Route ("/notion_data", name="notion_data")
+     */
+
+    public function notion_data():Response
+    {
+     
+        // return $this->json('hello world.');
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
+
+        $token = $data->getToken();
+
+        $workspace_content = $this->notionService->getWorkSpaceContent($token);
+
+        $returnArrayPage = [];
+        $returnArrayWorkspace = [];
+
+        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+
+        foreach ($page_content['results'] as $element) {
+            if ($element['type'] == 'heading_1' || $element['type'] == 'heading_2' || $element['type'] == 'heading_3' || $element['type'] == 'paragraph') {
+                if (!empty($element[$element['type']]['text'][0]['text']['content'])) {
+                    $type = $element['type'];
+                    $returnArrayPage []= [
+                        'obj' => $type,
+                        'id' => $element['id'],
+                        'content' => $element[$type]['text'][0]['text']['content'],
+                        'childrens' => []
+                    ];
+                }
+            } else if ($element['type'] == 'image') {
+                if (!empty($element[$element['type']]['file']['url'])) {
+                    $type = $element['type'];
+                    $returnArrayPage []= [
+                        'obj' => $type,
+                        'id' => $element['id'],
+                        'content' => $element[$type]['file']['url'],
+                        'childrens' => []
+                    ];
+                }
+            }
+        }
+        // return $this->json($returnArray);
+
+        $returnArrayWorkspace []= [
+            'obj' => $workspace_content['results'][0]['object'],
+            'id' => $workspace_content['results'][0]['id'],
+            'content' => $workspace_content['results'][0]['properties']['title']['title'][0]['plain_text'], 
+            'childrens' => $returnArrayPage,
+        ];
+
+        $returnArray = $returnArrayWorkspace;
+
+        return $this->json($returnArray);
+
     }
 
 }
