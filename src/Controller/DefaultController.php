@@ -68,7 +68,7 @@ class DefaultController extends AbstractController
     {
         // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=https://api.selfer.fr/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -103,7 +103,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'http://localhost:8080/oauth_token'
+                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -138,7 +138,7 @@ class DefaultController extends AbstractController
 
 
         // Redirect in front page once the user is logged and variable are sent in DB
-        return $this->redirect(sprintf("http://localhost:3000?frontToken=%s", $frontToken));
+        return $this->redirect(sprintf("https://selfer.fr?frontToken=%s", $frontToken));
     }
 
     /**
