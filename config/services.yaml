@@ -7,6 +7,8 @@ parameters:
   notion_client_id: "%env(resolve:NOTION_CLIENT_ID)%"
   notion_client_secret: "%env(resolve:NOTION_CLIENT_SECRET)%"
   static_websites_root: "%env(resolve:STATIC_WEBSITES_ROOT)%"
+  selfer_back_url: "%env(resolve:SELFER_BACK_URL)%"
+  selfer_front_url: "%env(resolve:SELFER_FRONT_URL)%"
 
 services:
   # default configuration for services in *this* file

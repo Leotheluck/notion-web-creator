@@ -85,6 +85,7 @@ class DefaultController extends AbstractController
         // Fetch client ID from services
         $notionClientId = $this->getParameter('notion_client_id');
 
+        $selferBackUrl = $this->getParameter('selfer_back_url');
         // Fetch client secret from services
         $notionClientSecret = $this->getParameter('notion_client_secret');
 
@@ -104,7 +105,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
+                'redirect_uri' => sprintf('%s/oauth_token', $selferBackUrl)
             ];
 
             $response = $this->httpClient->request(
