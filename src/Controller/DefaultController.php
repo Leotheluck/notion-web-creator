@@ -103,7 +103,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'http://api.selfer.fr/oauth_token'
+                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
             ];
 
             $response = $this->httpClient->request(
