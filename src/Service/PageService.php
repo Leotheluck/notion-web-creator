@@ -26,6 +26,7 @@ class PageService
     /**
      * @var ParameterBagInterface
      */
+
     private $parameterBag;
 
     /**
@@ -48,7 +49,7 @@ class PageService
         $this->notionService = $notionService;
     }
 
-    public function buildPage($token): array
+    public function buildPage($token, $stylesheet): array
     {
         // Fetch content from the workspace
         $workspace_content = $this->notionService->getWorkSpaceContent($token);
@@ -56,7 +57,16 @@ class PageService
         // Fetch content from the first page of the workspace
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
 
+        // Store file content
         $file_content = [];
+
+        // Get stylesheet
+        $styles = explode(",", $stylesheet);
+
+        // Explode array
+        for ($i = 0; $i < count($styles); $i++) {
+            $styles[$i] = explode('::', $styles[$i]);
+        }
 
         array_push(
             $file_content,
@@ -68,22 +78,41 @@ class PageService
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>%s</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%shttp://www.w3.org/2000/svg%s viewBox=%s0 0 100 100%s><text y=%s.9em%s font-size=%s90%s>%s</text></svg>">
 </head>
-<body>'
-                ,$workspace_content['results'][0]['properties']['title']['title'][0]['text']['content']
+<body>',
+                $workspace_content['results'][0]['properties']['title']['title'][0]['text']['content'],
+                "'","'","'","'","'","'","'","'",
+                $workspace_content['results'][0]['icon']['emoji']
             )
         );
 
         foreach ($page_content['results'] as $result) {
             $type = $result['type'];
 
+            $styling = 0;
+            for ($i = 0; $i < count($styles); $i++) {
+                if ($styles[$i][0] == $result['id']) {
+                    $styling = $styles[$i][1];
+                }
+            }
+
             if ($type == 'heading_1') {
-                if (!empty($result['heading_1']['text'][0]['text']['content'])) {
+                if (!empty($result['heading_1']['text'][0]['text']['content']) && $styling == 0) {
                     array_push(
                         $file_content,
                         sprintf(
                             '
     <h1>%s</h1>',
+                            $result['heading_1']['text'][0]['text']['content']
+                        )
+                    );
+                } else if (!empty($result['heading_1']['text'][0]['text']['content']) && $styling == 1) {
+                    array_push(
+                        $file_content,
+                        sprintf(
+                            '
+    <h1 class="style-1">%s</h1>',
                             $result['heading_1']['text'][0]['text']['content']
                         )
                     );
@@ -139,7 +168,17 @@ class PageService
             $file_content,
             '
 </body>
-</html>');
+</html>
+
+<style>
+h1{
+    background: red;
+}
+
+h1.style-1{
+    background: blue;
+}
+</style>');
 
         return $file_content;
     }

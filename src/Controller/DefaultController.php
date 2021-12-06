@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Entity\User;
+use App\Entity\Page;
 use App\Service\UserService;
 use App\Service\NotionService;
 use App\Service\PageService;
@@ -213,6 +214,9 @@ class DefaultController extends AbstractController
 
     public function build_page(): Response
     {
+        //$data = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['id' => $_GET['id']]);
+        //return $this->json($data->getPageName());
+
         //
         // Data
         //
@@ -223,12 +227,18 @@ class DefaultController extends AbstractController
         // Get the token associated with the workspace selected
         $token = $data->getToken();
 
+        // Identify matching page in DB
+        $stylesheet = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['page_id' => $_GET['page_id']]);
+
+        // File name
+        $filename = $stylesheet->getPageName();
+
+        // Get Stylesheet
+        $stylesheet = $stylesheet->getStylesheet();
+
         //
         // File
         //
-
-        // File name
-        $filename = $_GET['filename'];
 
         // Initiate File
         $filesystem = new Filesystem();
@@ -240,24 +250,23 @@ class DefaultController extends AbstractController
         $filepath = sprintf('%s/%s', $staticWebsitesRootDir, sprintf('%s.html', $filename));
 
         // Build file content
-        $file_content = $this->pageService->buildPage($token);
+        $file_content = $this->pageService->buildPage($token, $stylesheet);
 
         // Create final file
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
+        return $this->json('hi');
+        return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
 
     /**
-     * @Route ("/site", name="site")
+     * @Route ("/s", name="s")
      */
-    public function site (): Response
+    public function s (): Response
     {
-        // Redirect root
-        $staticWebsitesRootDir = sprintf('%s/%s', $this->getParameter('kernel.project_dir'), $this->getParameter('static_websites_root'));
-
-        $this->render(sprintf('%s/%s.html', $staticWebsitesRootDir, $_GET['page']));
+        return $this->render(sprintf('%s.html', $_GET['p']));
     }
 
 }
