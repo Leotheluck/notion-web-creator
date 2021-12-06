@@ -57,6 +57,11 @@ class User
      */
     private $notion_email;
 
+    /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $frontToken;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -154,6 +159,18 @@ class User
     public function setNotionEmail(string $notion_email): self
     {
         $this->notion_email = $notion_email;
+
+        return $this;
+    }
+
+    public function getFrontToken(): ?string
+    {
+        return $this->frontToken;
+    }
+
+    public function setFrontToken(string $frontToken): self
+    {
+        $this->frontToken = $frontToken;
 
         return $this;
     }

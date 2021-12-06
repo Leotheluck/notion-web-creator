@@ -3,14 +3,17 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Entity\User;
+use App\Service\UserService;
+use App\Service\NotionService;
+use App\Service\PageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-
 
 class DefaultController extends AbstractController
 {
@@ -19,12 +22,35 @@ class DefaultController extends AbstractController
      */
     private $httpClient;
 
+    /**
+     * @var UserService
+     */
+    private $userService;
+
+    /**
+     * @var NotionService
+     */
+
+    private $notionService;
+
+    /**
+     * @var PageService
+     */
+
+    private $pageService;
+
     public function __construct(
-        HttpClientInterface $httpClient
-        )
+        HttpClientInterface $httpClient,
+        UserService $userService,
+        NotionService $notionService,
+        PageService $pageService
+    )
 
     {
         $this->httpClient = $httpClient;
+        $this->userService = $userService;
+        $this->notionService = $notionService;
+        $this->pageService = $pageService;
     }
 
     /**
@@ -40,8 +66,9 @@ class DefaultController extends AbstractController
      */
     public function oauth(): Response
     {
+        // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=https://api.selfer.fr/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -54,7 +81,10 @@ class DefaultController extends AbstractController
     public function oauth_token(Request $request, ManagerRegistry $doctrine): Response
     {
         $entityManager = $doctrine->getManager();
+        // Fetch client ID from services
         $notionClientId = $this->getParameter('notion_client_id');
+
+        // Fetch client secret from services
         $notionClientSecret = $this->getParameter('notion_client_secret');
 
         $authorization_code = $request->get('code');
@@ -73,7 +103,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'http://localhost:8080/oauth_token'
+                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -87,8 +117,11 @@ class DefaultController extends AbstractController
             return $this->json($e->getMessage());
         }
 
-        // Create or update user
+        // Create front token used to login in front
+    
+        $frontToken = substr(sha1($json_response['owner']['user']['person']['email']), 0, 64);
 
+        // Create new user to assign variables
         $user = new User();
         $user->setToken($json_response['access_token']);
         $user->setWorkspaceName($json_response['workspace_name']);
@@ -98,9 +131,154 @@ class DefaultController extends AbstractController
         $user->setNotionName($json_response['owner']['user']['name']);
         $user->setNotionIcon($json_response['owner']['user']['avatar_url']);
         $user->setNotionEmail($json_response['owner']['user']['person']['email']);
+        $user->setFrontToken($frontToken);
         $entityManager->persist($user);
         $entityManager->flush();
-        var_dump($user);
-        return $this->json($json_response);
+
+
+
+        // Redirect in front page once the user is logged and variable are sent in DB
+        return $this->redirect(sprintf("https://selfer.fr?frontToken=%s", $frontToken));
     }
+
+    /**
+     * @Route("/user_logged", name="user_logged")
+     */
+
+     public function user_logged(Request $request): Response{
+        /** @var User $user */
+        $user = $this->userService->getUserFromRequest($request);
+        if (null === $user) {
+            return new Response('Unauthorized', 401);
+        }
+
+        $user->getNotionEmail();
+        
+        return true;
+     }
+
+
+    /**
+     * @Route("/get_info", name="get_info")
+     */
+
+    public function get_info(): Response
+    {
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
+
+        $token = $data->getToken();
+
+        $workspace_content = $this->notionService->getWorkSpaceContent($token);
+
+//        return $this->json($workspace_content);
+
+        // return $this->json($workspace_content['results'][0]['id']);
+
+        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+
+        // return $this->json($page_content);
+
+        $componentArray = [];
+
+        foreach ($page_content['results'] as $element) {
+            $type = $element['type'];
+
+            if ($type == 'heading_1' || $type == 'heading_2' || $type == 'heading_3') {
+                array_push($componentArray, $element[$type]['text'][0]['text']['content']);
+            } 
+            else if ($type == 'image') {
+                array_push($componentArray, $element[$type]['file']['url']);
+            }
+
+
+            // else if($type == 'paragraph'){
+            //     foreach ($element['paragraph']['text'] as $texts) {
+            //         if (!empty($texts)) {
+            //             foreach ($texts['text'] as $text) {
+            //                 var_dump($text);
+            //             }
+            //             //die;
+            //             //array_push($componentArray, $text['text']['content']);
+            //         }
+            //     }
+            else if($type== 'paragraph'){
+                if(!empty($element[$type]['text'][0]['text']['content'])){
+                    array_push($componentArray, $element[$type]['text'][0]['text']['content']);
+                }
+                // var_dump($element[$type]['text']);
+        
+            }
+            
+            array_push($componentArray, sprintf('(Type : %s)' ,$type));
+        }
+
+        return $this->json($componentArray);
+
+        //return $this->json($this->notionService->fetchContent($token, $page_content['id']));
+
+        // $authorizationHeader = sprintf('Bearer %s', $token);
+
+        // $workspace = $this->httpClient->request('POST', 'https://api.notion.com/v1/search/', [
+        //     'body' => [
+        //         'query' => '',
+        //     ],
+        //     'headers' => [
+        //         'Authorization' => $authorizationHeader,
+        //         'Notion-Version' => '2021-08-16'
+        //     ]
+        // ]);
+
+        // $workspace_decoded = json_decode($workspace->getContent(), true);
+
+        return $this->json($workspace_decoded['results'][0]['id']);
+    }
+
+    /**
+     * @Route ("/build_page", name="build_page")
+     */
+
+    public function build_page(): Response
+    {
+        //
+        // Data
+        //
+
+        // Identify matching workspace in DB
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
+
+        // Get the token associated with the workspace selected
+        $token = $data->getToken();
+
+        // Fetch content from the workspace
+        $workspace_content = $this->notionService->getWorkSpaceContent($token);
+
+        // Fetch content from the first page of the workspace
+        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
+
+        //
+        // File
+        //
+
+        // File name
+        $filename = $_GET['filename'];
+
+        // Initiate File
+        $filesystem = new Filesystem();
+
+        // Add root
+        $staticWebsitesRootDir = sprintf('%s/%s', $this->getParameter('kernel.project_dir'), $this->getParameter('static_websites_root'));
+
+        // Set file path & name
+        $filepath = sprintf('%s/%s', $staticWebsitesRootDir, sprintf('%s.html', $filename));
+
+        // Build file content
+        $file_content = $this->pageService->buildPage($this->json($page_content['results'][0]['type']));
+
+        // Create final file
+        $filesystem->dumpFile($filepath, implode("", $file_content));
+
+        // Send success message
+        return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
+    }
+
 }
