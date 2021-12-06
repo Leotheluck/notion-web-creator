@@ -238,11 +238,21 @@ class DefaultController extends AbstractController
      * @Route ("/build_page", name="build_page")
      */
 
-    public function build_page(): Response
+    public function build_page(ManagerRegistry $doctrine): Response
     {
         //
         // Data
         //
+
+        $entityManager = $doctrine->getManager();
+
+        $page = new Page();
+        $page->setPageId($_GET['page_id']);
+        $page->setPageName($_GET['page_name']);
+        $page->setWorkspaceId($_GET['code']);
+        $page->setStylesheet($_GET['style']);
+        $entityManager->persist($page);
+        $entityManager->flush();
 
         // Identify matching workspace in DB
         $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);

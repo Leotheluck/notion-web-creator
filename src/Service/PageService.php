@@ -305,11 +305,11 @@ h1{
 }
 
 h1.style-1{
-    background: blue;
+    text-decoration: underline;
 }
 
 h1.style-2{
-    background: blue;
+    color: blue;
 }
 
 h2{
@@ -320,7 +320,7 @@ h2{
 }
 
 h2.style-1{
-    background: blue;
+    text-decoration: underline;
 }
 
 h2.style-2{
