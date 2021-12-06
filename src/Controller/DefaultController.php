@@ -86,6 +86,7 @@ class DefaultController extends AbstractController
         $notionClientId = $this->getParameter('notion_client_id');
 
         $selferBackUrl = $this->getParameter('selfer_back_url');
+        $selferFrontUrl = $this->getParameter('selfer_front_url');
         // Fetch client secret from services
         $notionClientSecret = $this->getParameter('notion_client_secret');
 
@@ -140,7 +141,7 @@ class DefaultController extends AbstractController
 
 
         // Redirect in front page once the user is logged and variable are sent in DB
-        return $this->redirect(sprintf("https://selfer.fr?frontToken=%s", $frontToken));
+        return $this->redirect(sprintf("https://%s?frontToken=%s", $selferFrontUrl, $frontToken));
     }
 
     /**
