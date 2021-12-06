@@ -69,7 +69,7 @@ class DefaultController extends AbstractController
     {
         // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=https://api.selfer.fr/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -104,7 +104,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'http://localhost:8080/oauth_token'
+                'redirect_uri' => 'https://api.selfer.fr/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -299,7 +299,7 @@ class DefaultController extends AbstractController
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
-        return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
+        return $this->redirect(sprintf("https://api.selfer.fr/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
 
