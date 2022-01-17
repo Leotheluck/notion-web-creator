@@ -120,6 +120,8 @@ class DefaultController extends AbstractController
             return $this->json($e->getMessage());
         }
 
+        // return $this->json($json_response);
+        
         // Create front token used to login in front
     
         $frontToken = substr(sha1($json_response['owner']['user']['person']['email']), 0, 64);
@@ -324,6 +326,8 @@ class DefaultController extends AbstractController
 
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
 
+        // return $this->json($page_content);
+
         foreach ($page_content['results'] as $element) {
             if ($element['type'] == 'heading_1' || $element['type'] == 'heading_2' || $element['type'] == 'heading_3' || $element['type'] == 'paragraph') {
                 if (!empty($element[$element['type']]['text'][0]['text']['content'])) {
@@ -362,6 +366,20 @@ class DefaultController extends AbstractController
 
     }
 
+    /**
+     * @Route ("/user_data", name="user_data")
+     */
+
+    public function user_data(): Response
+    {
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['notion_id' => $_GET['user_id']]);
+        $token = $data->getToken();
+        $user_id = $data->getNotionId();
+        // return $this->json($user_id);
+
+        $user_content = $this->notionService->fetchData($token, $user_id);
+        return $this->json($user_content);
+    }
     /**
      * @Route ("/s", name="s")
      */
