@@ -405,12 +405,17 @@ class DefaultController extends AbstractController
                 $cover = $element['cover'][$coverType]['url'];
             }
 
+            $title = '';
+            if((!empty($element['properties']['title']['title']))){
+                $title = $element['properties']['title']['title'][0]['plain_text'];
+            }
+
             if($element['parent']['type'] == 'workspace'){
                 $returnWorkspaceInfo []= [
                     'object' => $element['object'],
                     'id' => $element['id'],
                     'last_edited_time' => $element['last_edited_time'],
-                    'title' => $element['properties']['title']['title'][0]['plain_text'], 
+                    'title' => $title, 
                     'cover' => $cover,
                     'emoji' => $emoji,
                 ];
