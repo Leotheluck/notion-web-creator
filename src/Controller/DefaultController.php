@@ -109,7 +109,7 @@ class DefaultController extends AbstractController
                 'redirect_uri' => sprintf('%s/oauth_token', $selferBackUrl)
             ];
 
-            $response = $this->httpClient->request(
+            $response = $this->hxttpClient->request(
                 'POST',
                 'https://api.notion.com/v1/oauth/token',
                 [ 'json' => $body, 'headers' => $headers ]
@@ -392,7 +392,32 @@ class DefaultController extends AbstractController
         $token = $data->getToken();
 
         $workspace_info = $this->notionService->getWorkSpaceContent($token);
-        return $this->json($workspace_info);
+
+        foreach ($workspace_info['results'] as $element) {
+            $emoji = '';
+            if((!empty($element['icon']['emoji']))){
+                $emoji = $element['icon']['emoji'];
+            }
+
+            $cover = '';
+            if((!empty($element['cover']))){
+                $coverType = $element['cover']['type'];
+                $cover = $element['cover'][$coverType]['url'];
+            }
+
+            if($element['parent']['type'] == 'workspace'){
+                $returnWorkspaceInfo []= [
+                    'object' => $element['object'],
+                    'id' => $element['id'],
+                    'last_edited_time' => $element['last_edited_time'],
+                    'title' => $element['properties']['title']['title'][0]['plain_text'], 
+                    'cover' => $cover,
+                    'emoji' => $emoji,
+                ];
+            }
+        }
+
+        return $this->json($returnWorkspaceInfo);
 
     }
 
