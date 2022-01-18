@@ -380,6 +380,22 @@ class DefaultController extends AbstractController
         $user_content = $this->notionService->fetchData($token, $user_id);
         return $this->json($user_content);
     }
+
+    /**
+     * @Route("/workspace_info", name="workspace_info")
+     */
+
+    public function workspace_info(): Response
+    {
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
+
+        $token = $data->getToken();
+
+        $workspace_info = $this->notionService->getWorkSpaceContent($token);
+        return $this->json($workspace_info);
+
+    }
+
     /**
      * @Route ("/s", name="s")
      */
