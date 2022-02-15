@@ -109,7 +109,7 @@ class DefaultController extends AbstractController
                 'redirect_uri' => sprintf('%s/oauth_token', $selferBackUrl)
             ];
 
-            $response = $this->hxttpClient->request(
+            $response = $this->httpClient->request(
                 'POST',
                 'https://api.notion.com/v1/oauth/token',
                 [ 'json' => $body, 'headers' => $headers ]
@@ -142,6 +142,7 @@ class DefaultController extends AbstractController
 
 
 
+        // return $this->json($selferFrontUrl);
         // Redirect in front page once the user is logged and variable are sent in DB
         return $this->redirect(sprintf("%s?frontToken=%s", $selferFrontUrl, $frontToken));
     }
