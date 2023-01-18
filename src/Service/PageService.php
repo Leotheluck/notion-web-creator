@@ -62,7 +62,7 @@ class PageService
         // Fetch content from the workspace
         $workspace_content = $this->notionService->getWorkSpaceContent($token);
 
-        // Fetch content from the only page of the workspace
+        // Fetch content from the first page of the workspace
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
 
         $file_content = [];
@@ -305,11 +305,11 @@ h1{
 }
 
 h1.style-1{
-    text-decoration: underline;
+    background: blue;
 }
 
 h1.style-2{
-    color: blue;
+    background: blue;
 }
 
 h2{
@@ -320,11 +320,11 @@ h2{
 }
 
 h2.style-1{
-    text-decoration: underline;
+    background: blue;
 }
 
 h2.style-2{
-    color: blue;
+    background: blue;
 }
 
 h3{
@@ -335,11 +335,11 @@ h3{
 }
 
 h3.style-1{
-    color: blue;
+    background: blue;
 }
 
 h3.style-2{
-    color: blue;
+    background: blue;
 }
 
 p{
@@ -350,11 +350,11 @@ p{
 }
 
 p.style-1{
-    font-family: serif;
+    background: blue;
 }
 
 p.style-2{
-    font-size: 1.25vw;
+    background: blue;
 }
 
 img{
@@ -364,11 +364,11 @@ img{
 }
 
 img.style-1{
-    width: 40vw;
+    background: blue;
 }
 
 img.style-2{
-    width: 20vw;
+    background: blue;
 }
 
 </style>');

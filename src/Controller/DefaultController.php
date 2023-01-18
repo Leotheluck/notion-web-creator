@@ -68,8 +68,6 @@ class DefaultController extends AbstractController
      */
     public function oauth(): Response
     {
-        $selferBackUrl = $this->getParameter('selfer_back_url');
-
         // Create string with hidden client ID to secure
         $oauth_string = sprintf(
             "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
@@ -88,8 +86,6 @@ class DefaultController extends AbstractController
         // Fetch client ID from services
         $notionClientId = $this->getParameter('notion_client_id');
 
-        $selferBackUrl = $this->getParameter('selfer_back_url');
-        $selferFrontUrl = $this->getParameter('selfer_front_url');
         // Fetch client secret from services
         $notionClientSecret = $this->getParameter('notion_client_secret');
 
@@ -111,7 +107,6 @@ class DefaultController extends AbstractController
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
                 'redirect_uri' => 'http://localhost:8080/oauth_token'
-
             ];
 
             $response = $this->httpClient->request(
@@ -126,7 +121,6 @@ class DefaultController extends AbstractController
         }
 
         // return $this->json($json_response);
-
         // Create front token used to login in front
     
         $frontToken = substr(sha1($json_response['owner']['user']['person']['email']), 0, 64);
@@ -150,10 +144,8 @@ class DefaultController extends AbstractController
 
 
 
-        // return $this->json($selferFrontUrl);
         // Redirect in front page once the user is logged and variable are sent in DB
         return $this->redirect(sprintf("http://localhost:3000?frontToken=%s", $frontToken));
-
     }
 
     /**
@@ -253,46 +245,26 @@ class DefaultController extends AbstractController
      * @Route ("/build_page", name="build_page")
      */
 
-    public function build_page(ManagerRegistry $doctrine): Response
+    public function build_page(): Response
     {
         //
         // Data
         //
 
         // Identify matching workspace in DB
-        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['id']]);
+        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
 
         // Get the token associated with the workspace selected
         $token = $data->getToken();
 
-        $workspace_content = $this->notionService->getWorkSpaceContent($token);
-
-        $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
-
-        $componentArray = [];
-
-        foreach ($page_content['results'] as $element) {
-            $type = $element['type'];
-
-            if ($type == 'heading_1' || $type == 'heading_2' || $type == 'heading_3' || $type == 'paragraph' || $type == 'image') {
-                array_push($componentArray, $element['id'] . "::0");
-            }
-        }
-
-        $stylesheet = implode(",", $componentArray);
-
-        $entityManager = $doctrine->getManager();
+        // Fetch style data
+        $superstyle = $this->getDoctrine()->getRepository(Page::class)->findOneBy(['page_id' => $_GET['page_id']]);
 
         // File name
-        $filename = $_GET['page_name'];
+        $filename = $superstyle->getPageName();
 
-        $page = new Page();
-        $page->setPageId($workspace_content['results'][0]['id']);
-        $page->setPageName($filename);
-        $page->setWorkspaceId($_GET['id']);
-        $page->setStylesheet($stylesheet);
-        $entityManager->persist($page);
-        $entityManager->flush();
+        // Get Stylesheet
+        $stylesheet = $superstyle->getStylesheet();
 
         //
         // File
@@ -314,8 +286,7 @@ class DefaultController extends AbstractController
         $filesystem->dumpFile($filepath, implode("", $file_content));
 
         // Send success message
-        $selferBackUrl = $this->getParameter('selfer_back_url');
-        return $this->redirect(sprintf("%s/s?p=%s", $selferBackUrl, $filename));
+        return $this->redirect(sprintf("http://localhost:8080/s?p=%s", $filename));
         return $this->json(sprintf("Done ! Your Notion data has been implemented into the new website %s.html!", $filename));
     }
 
@@ -337,8 +308,6 @@ class DefaultController extends AbstractController
         $returnArrayWorkspace = [];
 
         $page_content = $this->notionService->fetchContent($token, $workspace_content['results'][0]['id']);
-
-        // return $this->json($page_content);
 
         foreach ($page_content['results'] as $element) {
             if ($element['type'] == 'heading_1' || $element['type'] == 'heading_2' || $element['type'] == 'heading_3' || $element['type'] == 'paragraph') {
@@ -375,66 +344,6 @@ class DefaultController extends AbstractController
         $returnArray = $returnArrayWorkspace;
 
         return $this->json($returnArray);
-
-    }
-
-    /**
-     * @Route ("/user_data", name="user_data")
-     */
-
-    public function user_data(): Response
-    {
-        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['notion_id' => $_GET['user_id']]);
-        $token = $data->getToken();
-        $user_id = $data->getNotionId();
-        // return $this->json($user_id);
-
-        $user_content = $this->notionService->fetchData($token, $user_id);
-        return $this->json($user_content);
-    }
-
-    /**
-     * @Route("/workspace_info", name="workspace_info")
-     */
-
-    public function workspace_info(): Response
-    {
-        $data = $this->getDoctrine()->getRepository(User::class)->findOneBy(['workspace_id' => $_GET['code']]);
-
-        $token = $data->getToken();
-
-        $workspace_info = $this->notionService->getWorkSpaceContent($token);
-
-        foreach ($workspace_info['results'] as $element) {
-            $emoji = '';
-            if((!empty($element['icon']['emoji']))){
-                $emoji = $element['icon']['emoji'];
-            }
-
-            $cover = '';
-            if((!empty($element['cover']))){
-                $coverType = $element['cover']['type'];
-                $cover = $element['cover'][$coverType]['url'];
-            }
-
-            $title = '';
-            if((!empty($element['properties']['title']['title']))){
-                $title = $element['properties']['title']['title'][0]['plain_text'];
-            }
-
-            if($element['parent']['type'] == 'workspace'){
-                $returnWorkspaceInfo []= [
-                    'object' => $element['object'],
-                    'id' => $element['id'],
-                    'last_edited_time' => $element['last_edited_time'],
-                    'title' => $title, 
-                    'cover' => $cover,
-                    'emoji' => $emoji,
-                ];
-            }
-        }
-
-        return $this->json($returnWorkspaceInfo);
 
     }
 
