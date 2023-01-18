@@ -60,6 +60,7 @@ class DefaultController extends AbstractController
     public function index(): Response
     {
         return $this->json('hello world.');
+        
     }
 
     /**
@@ -69,7 +70,7 @@ class DefaultController extends AbstractController
     {
         // Create string with hidden client ID to secure
         $oauth_string = sprintf(
-            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://api.selfer.fr/oauth_token&response_type=code",
+            "https://api.notion.com/v1/oauth/authorize?owner=user&client_id=%s&redirect_uri=http://localhost:8080/oauth_token&response_type=code",
             $this->getParameter('notion_client_id')
         );
 
@@ -89,6 +90,7 @@ class DefaultController extends AbstractController
         $notionClientSecret = $this->getParameter('notion_client_secret');
 
         $authorization_code = $request->get('code');
+        
         $basicAuthentication = base64_encode(sprintf('%s:%s',
             $notionClientId,
             $notionClientSecret
@@ -104,7 +106,7 @@ class DefaultController extends AbstractController
             $body = [
                 'code' => $authorization_code,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => 'http://api.selfer.fr/oauth_token'
+                'redirect_uri' => 'http://localhost:8080/oauth_token'
             ];
 
             $response = $this->httpClient->request(
@@ -118,12 +120,15 @@ class DefaultController extends AbstractController
             return $this->json($e->getMessage());
         }
 
+        // return $this->json($json_response);
         // Create front token used to login in front
     
         $frontToken = substr(sha1($json_response['owner']['user']['person']['email']), 0, 64);
 
+        
         // Create new user to assign variables
         $user = new User();
+
         $user->setToken($json_response['access_token']);
         $user->setWorkspaceName($json_response['workspace_name']);
         $user->setWorkspaceIcon($json_response['workspace_icon']);
@@ -133,13 +138,14 @@ class DefaultController extends AbstractController
         $user->setNotionIcon($json_response['owner']['user']['avatar_url']);
         $user->setNotionEmail($json_response['owner']['user']['person']['email']);
         $user->setFrontToken($frontToken);
+
         $entityManager->persist($user);
         $entityManager->flush();
 
 
 
         // Redirect in front page once the user is logged and variable are sent in DB
-        return $this->redirect(sprintf("http://selfer.fr?frontToken=%s", $frontToken));
+        return $this->redirect(sprintf("http://localhost:3000?frontToken=%s", $frontToken));
     }
 
     /**
@@ -152,8 +158,9 @@ class DefaultController extends AbstractController
         if (null === $user) {
             return new Response('Unauthorized', 401);
         }
-
+        
         $user->getNotionEmail();
+        return $this->json($user);
         
         return true;
      }
