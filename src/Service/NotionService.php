@@ -72,4 +72,22 @@ class NotionService
 
         return json_decode($page->getContent(), true);
     }
+
+    public function fetchData($token, $user_id)
+    {
+        $authorizationHeader = sprintf('Bearer %s', $token);
+        $fetchURL = sprintf('https://api.notion.com/v1/users/%s', $user_id);
+        
+        $page = $this->httpClient->request('GET', $fetchURL, [
+            'body' => [
+                'query' => '',
+            ],
+            'headers' => [
+                'Authorization' => $authorizationHeader,
+                'Notion-Version' => '2021-08-16'
+                ]
+            ]);
+
+        return json_decode($page->getContent(), true);
+    }
 }
