@@ -11,3 +11,4 @@
 /._mysql_data_dir/
 /.idea/
 ###< symfony/framework-bundle ###
+.DS_Store
